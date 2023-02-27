@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { UserType } from "../helpers/common";
+
 const userSchema = new mongoose.Schema({
 	email: {
 		type: String,
@@ -22,7 +24,8 @@ const userSchema = new mongoose.Schema({
 		default: Date.now,
 	},
 	userType: {
-		type: UserType,
+		type: String,
+		enum: UserType,
 		required: true,
 	},
 	courses: {

@@ -1,15 +1,16 @@
 import express, { Application, ErrorRequestHandler } from "express";
 import "dotenv/config";
 
-const app: Application = express();
+import "./helpers/mongo_config";
 
-const PORT: number = +(process.env.PORT || 3000);
+import { authRoute } from "./controllers/auth";
 
-app.get("/", async (req, res) => {
-	res.send({
-		message: "pong",
-	});
-});
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.use("/auth", authRoute);
 
 app.use(async (req, res, next) => {
 	res.status(404).send("This path does not exist.");
