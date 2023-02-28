@@ -1,6 +1,5 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import createError from "http-errors";
 
 import { User } from "../models/User";
 
@@ -65,34 +64,21 @@ authRoute.post("/login", async (req, res) => {
 	res.send({ user, accessToken, refreshToken });
 });
 
-authRoute.post("/refresh-token", async (req, res, next) => {
-	try {
-		const { refreshToken } = req.body;
-		if (!refreshToken) throw createError.BadRequest();
+authRoute.post("/refresh-token", async (req, res) => {
+	const { refreshToken } = req.body;
+	if (!refreshToken) return res.sendStatus(400);
 
-		const userId = await verifyRefreshToken(refreshToken);
-		const accessToken = await signAccessToken(userId);
+	const userId = await verifyRefreshToken(refreshToken);
+	const accessToken = await signAccessToken(userId);
 
-		res.send({ accessToken });
-	} catch (err) {
-		next(err);
-	}
+	res.send({ accessToken });
 });
 
-authRoute.post("/logout", verifyAccessToken, async (req, res, next) => {
-	try {
-		const { refreshToken } = req.body;
-		if (!refreshToken) throw createError.BadRequest();
+authRoute.post("/logout", verifyAccessToken, async (req, res) => {
+	const { refreshToken } = req.body;
+	if (!refreshToken) return res.sendStatus(400);
 
-		try {
-			const userId = await verifyRefreshToken(refreshToken);
-			console.log(`Logged out user with userID: ${userId}`);
-			res.sendStatus(204);
-		} catch (err) {
-			console.log("Unauthorized");
-			res.sendStatus(401);
-		}
-	} catch (err) {
-		next(err);
-	}
+	const userId = await verifyRefreshToken(refreshToken);
+	console.log(`Logged out user ${userId}`);
+	res.sendStatus(204);
 });

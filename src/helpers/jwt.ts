@@ -26,6 +26,8 @@ export const verifyAccessToken = (req, res, next) => {
 	const token = req.headers["authorization"].split(" ")[1];
 	jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, payload) => {
 		if (err) return next(createError.Unauthorized(err));
+		if (payload.iss !== "skoriop-cms.com")
+			return next(createError.Unauthorized("Wrong JWT issuer"));
 		req.payload = payload;
 		next();
 	});
