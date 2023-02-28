@@ -12,15 +12,22 @@ app.use(express.json());
 
 app.use("/auth", authRoute);
 
+app.get("/", async (req, res) => {
+	res.send({
+		message: "pong",
+	});
+});
+
 app.use(async (req, res, next) => {
 	res.status(404).send("This path does not exist.");
 });
 
 app.use(((err, req, res, next) => {
-	res.status(err.status || res.status || 500);
+	res.status(Math.floor(err.status) || Math.floor(Number(res.status)) || 500);
 	res.send({
 		error: {
-			status: err.status || res.status || 500,
+			status:
+				Math.floor(err.status) || Math.floor(Number(res.status)) || 500,
 			message: err.message,
 		},
 	});
