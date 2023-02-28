@@ -1,4 +1,5 @@
 import { Router } from "express";
+import bcrypt from "bcryptjs";
 
 import { getCurrentUser, UserType } from "../helpers/common";
 import { verifyAccessToken } from "../helpers/jwt";
@@ -38,6 +39,12 @@ userRoute.put("/me", verifyAccessToken, async (req: any, res) => {
 	const is_email = await User.findOne({ email: req.body.email });
 	if (is_email) return res.status(400).send("Email already exists");
 
+	let hashedPassword = undefined;
+	if (req.body.password !== undefined) {
+		const salt = await bcrypt.genSalt(10);
+		hashedPassword = await bcrypt.hash(req.body.password, salt);
+	}
+
 	try {
 		const updatedUser = await User.findOneAndUpdate(
 			{ username: user.username },
@@ -45,6 +52,7 @@ userRoute.put("/me", verifyAccessToken, async (req: any, res) => {
 				username: req.body.username || user.username,
 				email: req.body.email || user.email,
 				name: req.body.name || user.name,
+				password: hashedPassword || user.password,
 			},
 			{ new: true }
 		);
