@@ -23,13 +23,23 @@ authRoute.post("/register", async (req, res) => {
 
 	const salt = await bcrypt.genSalt(10);
 	const hashedPassword = await bcrypt.hash(req.body.password, salt);
+	let type = UserType.STUDENT;
+
+	if (req.headers["authorization"]) {
+		const token = req.headers["authorization"].split(" ")[1];
+		if (token === process.env.ADMIN_SECRET_TOKEN) {
+			if (req.body.type === "admin") type = UserType.ADMIN;
+			else if (req.body.type === "professor") type = UserType.PROFESSOR;
+			else type = UserType.STUDENT;
+		}
+	}
 
 	const user = new User({
 		email: req.body.email,
 		name: req.body.name,
 		username: req.body.username,
 		password: hashedPassword,
-		userType: UserType.STUDENT,
+		userType: type,
 	});
 
 	try {
@@ -41,9 +51,12 @@ authRoute.post("/register", async (req, res) => {
 });
 
 authRoute.post("/login", async (req, res) => {
-	const user = await User.findOne({ email: req.body.email });
-	if (!user) return res.status(400).send("Wrong credentials");
+	const by_email = await User.findOne({ email: req.body.email });
+	const by_username = await User.findOne({ username: req.body.username });
+	if (!by_email && !by_username)
+		return res.status(400).send("Wrong credentials");
 
+	const user = by_email || by_username;
 	const pass = await bcrypt.compare(req.body.password, user.password);
 	if (!pass) return res.status(400).send("Wrong credentials");
 

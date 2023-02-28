@@ -5,14 +5,14 @@ mongoose.set("strictQuery", true);
 
 try {
 	mongoose.connect(process.env.MONGODB_CONNECT || "", () =>
-		console.log("Connected to DB!")
+		console.log("Connected to MongoDB!")
 	);
 } catch (err) {
 	console.log(err);
 }
 
 mongoose.connection.on("connected", () => {
-	console.log("Mongoose connected to DB!");
+	console.log("Mongoose connected to MongoDB!");
 });
 
 mongoose.connection.on("error", (err) => {
