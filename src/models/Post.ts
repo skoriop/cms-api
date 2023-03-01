@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const announcementSchema = new mongoose.Schema({
+export const postSchema = new mongoose.Schema({
 	title: {
 		type: String,
 		required: true,
@@ -15,4 +15,4 @@ const announcementSchema = new mongoose.Schema({
 	},
 });
 
-export const Announcement = mongoose.model("Course", announcementSchema);
+// export const Post = mongoose.model("Post", postSchema);

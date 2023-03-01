@@ -3,6 +3,7 @@ import { getCurrentUser, UserType } from "../helpers/common";
 import { verifyAccessToken } from "../helpers/jwt";
 import { Course } from "../models/Course";
 import { User } from "../models/User";
+import { postRoute } from "./post";
 
 export const courseRoute = Router();
 
@@ -13,6 +14,7 @@ courseRoute.post("/create/", verifyAccessToken, async (req, res) => {
 	const course = new Course({
 		code: req.body.code,
 		name: req.body.name,
+		users: [currentUser.id],
 	});
 
 	try {
@@ -75,7 +77,7 @@ courseRoute.post("/:courseId/enroll", verifyAccessToken, async (req, res) => {
 	const currentUser = await getCurrentUser(req);
 	if (currentUser.userType !== UserType.PROFESSOR) return res.sendStatus(403);
 
-	let course;
+	let course, user;
 	try {
 		course = await Course.findById(req.params.courseId);
 		if (!course) return res.status(404).send("Course not found");
@@ -84,16 +86,19 @@ courseRoute.post("/:courseId/enroll", verifyAccessToken, async (req, res) => {
 	}
 
 	try {
-		const user = await User.findById(req.body.userId);
+		user = await User.findById(req.body.userId);
 		if (!user) return res.status(400).send("User not found");
 	} catch (err) {
 		return res.status(400).send("User not found");
 	}
 
 	try {
-		if (course.users.indexOf(req.body.userId) === -1)
+		if (course.users.indexOf(req.body.userId) === -1) {
 			course.users.push(req.body.userId);
+			user.courses.push(req.params.courseId);
+		}
 
+		await user.save();
 		await course.save();
 		res.send({ course });
 	} catch (err) {
@@ -105,7 +110,7 @@ courseRoute.post("/:courseId/unenroll", verifyAccessToken, async (req, res) => {
 	const currentUser = await getCurrentUser(req);
 	if (currentUser.userType !== UserType.PROFESSOR) return res.sendStatus(403);
 
-	let course;
+	let course, user;
 	try {
 		course = await Course.findById(req.params.courseId);
 		if (!course) return res.status(404).send("Course not found");
@@ -114,7 +119,7 @@ courseRoute.post("/:courseId/unenroll", verifyAccessToken, async (req, res) => {
 	}
 
 	try {
-		const user = await User.findById(req.body.userId);
+		user = await User.findById(req.body.userId);
 		if (!user) return res.status(400).send("User not found");
 	} catch (err) {
 		return res.status(400).send("User not found");
@@ -125,10 +130,14 @@ courseRoute.post("/:courseId/unenroll", verifyAccessToken, async (req, res) => {
 			res.status(400).send("User not enrolled");
 
 		course.users = course.users.filter((e) => e !== req.body.userId);
+		user.courses = user.courses.filter((e) => e !== req.params.courseId);
 
+		await user.save();
 		await course.save();
 		res.send({ course });
 	} catch (err) {
 		res.status(400).send(err);
 	}
 });
+
+courseRoute.use("/:courseId/post", postRoute);

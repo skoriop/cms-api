@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { Announcement } from "./Announcement";
+import { postSchema } from "./Post";
 
 const courseSchema = new mongoose.Schema({
 	code: {
@@ -19,8 +19,8 @@ const courseSchema = new mongoose.Schema({
 		type: Array<mongoose.Types.ObjectId>,
 		default: [],
 	},
-	announcements: {
-		type: Array<typeof Announcement>,
+	posts: {
+		type: [postSchema],
 		default: [],
 	},
 });
