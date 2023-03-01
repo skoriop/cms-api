@@ -8,6 +8,6 @@ export enum UserType {
 
 export const getCurrentUser = async (req: any) => {
 	const userId = req.payload.aud;
-	const user = await User.findOne({ _id: userId });
+	const user = await User.findById(userId);
 	return user;
 };
