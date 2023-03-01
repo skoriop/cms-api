@@ -5,6 +5,7 @@ import "./helpers/mongo_config";
 
 import { authRoute } from "./controllers/auth";
 import { userRoute } from "./controllers/user";
+import { courseRoute } from "./controllers/course";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/auth", authRoute);
 app.use("/user", userRoute);
+app.use("/course", courseRoute);
 
 app.get("/", async (req, res) => {
 	res.send({

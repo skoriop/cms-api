@@ -15,7 +15,7 @@ const courseSchema = new mongoose.Schema({
 		type: Array<mongoose.Types.ObjectId>,
 		default: [],
 	},
-	contents: {
+	announcements: {
 		type: Array<typeof Announcement>,
 		default: [],
 	},

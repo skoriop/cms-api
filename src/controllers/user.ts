@@ -113,7 +113,7 @@ userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 		const is_email = await User.findOne({ email: req.body.email });
 		if (is_email) return res.status(400).send("Email already exists");
 
-		const newUser = await User.findByIdAndUpdate(
+		const updatedUser = await User.findByIdAndUpdate(
 			req.params.userId,
 			{
 				username: req.body.username || user.username,
@@ -126,13 +126,13 @@ userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 		);
 
 		res.send({
-			id: user.id,
-			email: user.email,
-			name: user.name,
-			username: user.username,
-			createdAt: user.createdAt,
-			type: user.userType,
-			courses: user.courses,
+			id: updatedUser.id,
+			email: updatedUser.email,
+			name: updatedUser.name,
+			username: updatedUser.username,
+			createdAt: updatedUser.createdAt,
+			type: updatedUser.userType,
+			courses: updatedUser.courses,
 		});
 	} catch (err) {
 		return res.status(404).send("User not found");
@@ -147,7 +147,7 @@ userRoute.delete("/:userId", verifyAccessToken, async (req: any, res) => {
 		const user = await User.findByIdAndDelete(req.params.userId);
 		if (!user) return res.status(404).send("User not found");
 
-		console.log(`Deleted user ${req.params.username}`);
+		console.log(`Deleted user ${req.params.userId}`);
 		res.sendStatus(204);
 	} catch (err) {
 		return res.status(404).send("User not found");
