@@ -11,6 +11,10 @@ const courseSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 	},
+	createdAt: {
+		type: Date,
+		default: Date.now,
+	},
 	users: {
 		type: Array<mongoose.Types.ObjectId>,
 		default: [],
