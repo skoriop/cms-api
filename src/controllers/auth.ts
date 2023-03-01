@@ -38,7 +38,7 @@ authRoute.post("/register", async (req, res) => {
 		name: req.body.name,
 		username: req.body.username,
 		password: hashedPassword,
-		userType: type,
+		type: type,
 	});
 
 	try {

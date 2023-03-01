@@ -6,6 +6,7 @@ import { getCurrentUser, UserType } from "../helpers/common";
 import { verifyAccessToken } from "../helpers/jwt";
 
 import { User } from "../models/User";
+import { Course } from "../models/Course";
 
 export const userRoute = Router();
 
@@ -17,7 +18,7 @@ userRoute.get("/me", verifyAccessToken, async (req: any, res) => {
 		name: user.name,
 		username: user.username,
 		createdAt: user.createdAt,
-		type: user.userType,
+		type: user.type,
 		courses: user.courses,
 	});
 });
@@ -39,7 +40,7 @@ userRoute.put("/me", verifyAccessToken, async (req: any, res) => {
 
 	try {
 		const updatedUser = await User.findByIdAndUpdate(
-			user._id,
+			user.id,
 			{
 				username: req.body.username || user.username,
 				email: req.body.email || user.email,
@@ -54,7 +55,7 @@ userRoute.put("/me", verifyAccessToken, async (req: any, res) => {
 			name: updatedUser.name,
 			username: updatedUser.username,
 			createdAt: updatedUser.createdAt,
-			type: updatedUser.userType,
+			type: updatedUser.type,
 			courses: updatedUser.courses,
 		});
 	} catch (err) {
@@ -64,8 +65,16 @@ userRoute.put("/me", verifyAccessToken, async (req: any, res) => {
 
 userRoute.delete("/me", verifyAccessToken, async (req: any, res) => {
 	const user = await getCurrentUser(req);
+
+	for (const courseId of user.courses) {
+		const course = await Course.findById(courseId);
+		if (!course) continue;
+		course.users = course.users.filter((e) => e !== user.id);
+		await course.save();
+	}
+
 	await user.delete();
-	console.log(`Deleted user ${user.username}`);
+	console.log(`Deleted user ${user.id}`);
 	return res.sendStatus(204);
 });
 
@@ -75,14 +84,14 @@ userRoute.get("/:userId", verifyAccessToken, async (req: any, res) => {
 		if (!user) return res.status(404).send("User not found");
 
 		const currentUser = await getCurrentUser(req);
-		if (currentUser.userType === UserType.ADMIN) {
+		if (currentUser.type === UserType.ADMIN) {
 			res.send({
 				id: user.id,
 				email: user.email,
 				name: user.name,
 				username: user.username,
 				createdAt: user.createdAt,
-				type: user.userType,
+				type: user.type,
 				courses: user.courses,
 			});
 		} else {
@@ -90,7 +99,7 @@ userRoute.get("/:userId", verifyAccessToken, async (req: any, res) => {
 				id: user.id,
 				name: user.name,
 				username: user.username,
-				type: user.userType,
+				type: user.type,
 				courses: user.courses,
 			});
 		}
@@ -101,7 +110,7 @@ userRoute.get("/:userId", verifyAccessToken, async (req: any, res) => {
 
 userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 	const currentUser = await getCurrentUser(req);
-	if (currentUser.userType !== UserType.ADMIN) return res.sendStatus(403);
+	if (currentUser.type !== UserType.ADMIN) return res.sendStatus(403);
 
 	try {
 		const user = await User.findById(req.params.userId);
@@ -119,7 +128,7 @@ userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 				username: req.body.username || user.username,
 				email: req.body.email || user.email,
 				name: req.body.name || user.name,
-				userType: req.body.type || user.userType,
+				type: req.body.type || user.type,
 				courses: req.body.courses || user.courses,
 			},
 			{ new: true }
@@ -131,7 +140,7 @@ userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 			name: updatedUser.name,
 			username: updatedUser.username,
 			createdAt: updatedUser.createdAt,
-			type: updatedUser.userType,
+			type: updatedUser.type,
 			courses: updatedUser.courses,
 		});
 	} catch (err) {
@@ -141,11 +150,18 @@ userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 
 userRoute.delete("/:userId", verifyAccessToken, async (req: any, res) => {
 	const currentUser = await getCurrentUser(req);
-	if (currentUser.userType !== UserType.ADMIN) return res.sendStatus(403);
+	if (currentUser.type !== UserType.ADMIN) return res.sendStatus(403);
 
 	try {
 		const user = await User.findByIdAndDelete(req.params.userId);
 		if (!user) return res.status(404).send("User not found");
+
+		for (const courseId of user.courses) {
+			const course = await Course.findById(courseId);
+			if (!course) continue;
+			course.users = course.users.filter((e) => e !== req.params.userId);
+			await course.save();
+		}
 
 		console.log(`Deleted user ${req.params.userId}`);
 		res.sendStatus(204);
