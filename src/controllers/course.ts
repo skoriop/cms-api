@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { deleteObject, ref } from "firebase/storage";
 import { getCurrentUser, UserType } from "../helpers/common";
+import { storage } from "../helpers/firebase_config";
 import { verifyAccessToken } from "../helpers/jwt";
 import { Course } from "../models/Course";
 import { User } from "../models/User";
@@ -87,6 +89,24 @@ courseRoute.delete("/:courseId/", verifyAccessToken, async (req: any, res) => {
 				(e) => e !== req.params.courseId
 			);
 			await user.save();
+		}
+
+		try {
+			for (const post of course.posts) {
+				for (const fileURL of post.files) {
+					console.log("Deleting " + fileURL);
+					const fileRef = ref(storage, fileURL);
+					deleteObject(fileRef)
+						.then(() => console.log("Deleted " + fileURL))
+						.catch((err) => {
+							console.log(err.message);
+							res.status(500).send(err);
+						});
+				}
+			}
+		} catch (err) {
+			console.log(err.message);
+			res.status(500).send(err);
 		}
 
 		console.log(`Deleted course ${req.params.courseId}`);
