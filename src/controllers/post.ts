@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getCurrentUser, UserType } from "../helpers/common";
 import { verifyAccessToken } from "../helpers/jwt";
 import { Course } from "../models/Course";
+import { commentRoute } from "./comment";
 
 export const postRoute = Router({ mergeParams: true });
 
@@ -111,3 +112,5 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 		res.status(400).send(err);
 	}
 });
+
+postRoute.use("/:postId/comment", commentRoute);

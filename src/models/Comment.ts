@@ -1,24 +1,14 @@
 import mongoose from "mongoose";
 
-import { commentSchema } from "./Comment";
-
-export const postSchema = new mongoose.Schema({
+export const commentSchema = new mongoose.Schema({
 	by: {
 		type: mongoose.Types.ObjectId,
 		required: true,
 		immutable: true,
 	},
-	title: {
-		type: String,
-		required: true,
-	},
 	body: {
 		type: String,
 		required: true,
-	},
-	comments: {
-		type: [commentSchema],
-		default: [],
 	},
 	createdAt: {
 		type: Date,
