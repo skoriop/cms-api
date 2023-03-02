@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 export const postSchema = new mongoose.Schema({
+	by: {
+		type: mongoose.Types.ObjectId,
+		required: true,
+		immutable: true,
+	},
 	title: {
 		type: String,
 		required: true,
@@ -12,6 +17,7 @@ export const postSchema = new mongoose.Schema({
 	createdAt: {
 		type: Date,
 		default: Date.now,
+		immutable: true,
 	},
 });
 

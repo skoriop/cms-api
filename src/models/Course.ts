@@ -14,6 +14,7 @@ const courseSchema = new mongoose.Schema({
 	createdAt: {
 		type: Date,
 		default: Date.now,
+		immutable: true,
 	},
 	users: {
 		type: Array<mongoose.Types.ObjectId>,
