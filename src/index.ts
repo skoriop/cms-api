@@ -2,6 +2,7 @@ import express, { Application, ErrorRequestHandler } from "express";
 import "dotenv/config";
 
 import "./helpers/mongo_config";
+import "./helpers/firebase_config";
 
 import { authRoute } from "./controllers/auth";
 import { userRoute } from "./controllers/user";

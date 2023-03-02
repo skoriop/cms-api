@@ -16,6 +16,10 @@ export const postSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 	},
+	files: {
+		type: Array<String>,
+		default: [],
+	},
 	comments: {
 		type: [commentSchema],
 		default: [],
