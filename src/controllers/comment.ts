@@ -30,11 +30,15 @@ commentRoute.post("/create/", verifyAccessToken, async (req: any, res) => {
 
 	try {
 		post.comments.push(comment);
-		await redisClient.del("C-" + course.id);
+		await redisClient.set(
+			"C-" + req.params.courseId,
+			JSON.stringify(course),
+			{ XX: true }
+		);
 		await course.save();
-		res.send(post);
+		return res.send(post);
 	} catch (err) {
-		res.status(400).send(err);
+		return res.status(400).send(err);
 	}
 });
 
@@ -83,9 +87,13 @@ commentRoute.put("/:commentId/", verifyAccessToken, async (req: any, res) => {
 
 	try {
 		comment.set(req.body);
-		await redisClient.del("C-" + course.id);
+		await redisClient.set(
+			"C-" + req.params.courseId,
+			JSON.stringify(course),
+			{ XX: true }
+		);
 		await course.save();
-		res.send(comment);
+		return res.send(comment);
 	} catch (err) {
 		return res.status(400).send(err);
 	}
@@ -122,13 +130,17 @@ commentRoute.delete(
 		try {
 			comment.remove();
 			await course.save();
-			await redisClient.del("C-" + course.id);
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
 			console.log(
 				`Deleted comment ${req.params.commentId} on post ${req.params.postId} from course ${req.params.courseId}`
 			);
-			res.sendStatus(204);
+			return res.sendStatus(204);
 		} catch (err) {
-			res.status(400).send(err);
+			return res.status(400).send(err);
 		}
 	}
 );

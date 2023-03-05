@@ -20,7 +20,7 @@ app.use("/user", userRoute);
 app.use("/course", courseRoute);
 
 app.get("/", async (req, res) => {
-	res.send({
+	return res.send({
 		message: "pong",
 	});
 });
@@ -30,8 +30,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-	res.status(err.status || res.status || 500);
-	res.send({
+	return res.status(err.status || res.status || 500).send({
 		error: {
 			status: err.status || res.status || 500,
 			message: err.message,

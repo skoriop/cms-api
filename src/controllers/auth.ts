@@ -60,9 +60,9 @@ authRoute.post("/register", async (req, res) => {
 			})
 			.catch((err) => console.log(err));
 
-		res.send(user);
+		return res.send(user);
 	} catch (err) {
-		res.status(400).send(err);
+		return res.status(400).send(err);
 	}
 });
 
@@ -78,7 +78,7 @@ authRoute.post("/login", async (req, res) => {
 
 	const accessToken = await signAccessToken(user.id);
 	const refreshToken = await signRefreshToken(user.id);
-	res.send({ user, accessToken, refreshToken });
+	return res.send({ user, accessToken, refreshToken });
 });
 
 authRoute.post("/refresh-token", async (req, res) => {
@@ -88,7 +88,7 @@ authRoute.post("/refresh-token", async (req, res) => {
 	const userId = await verifyRefreshToken(refreshToken);
 	const accessToken = await signAccessToken(userId);
 
-	res.send({ accessToken });
+	return res.send({ accessToken });
 });
 
 authRoute.post("/logout", verifyAccessToken, async (req, res) => {
@@ -97,7 +97,7 @@ authRoute.post("/logout", verifyAccessToken, async (req, res) => {
 
 	const userId = await verifyRefreshToken(refreshToken);
 	console.log(`Logged out user ${userId}`);
-	res.sendStatus(204);
+	return res.sendStatus(204);
 });
 
 authRoute.get("/confirm/:code", async (req, res) => {

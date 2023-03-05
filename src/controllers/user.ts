@@ -9,7 +9,7 @@ export const userRoute = Router();
 
 userRoute.get("/me", verifyAccessToken, async (req: any, res) => {
 	const user = await getCurrentUser(req);
-	res.send({
+	return res.send({
 		id: user.id,
 		email: user.email,
 		name: user.name,
@@ -46,7 +46,7 @@ userRoute.put("/me", verifyAccessToken, async (req: any, res) => {
 			},
 			{ new: true }
 		);
-		res.send({
+		return res.send({
 			id: updatedUser.id,
 			email: updatedUser.email,
 			name: updatedUser.name,
@@ -82,7 +82,7 @@ userRoute.get("/:userId", verifyAccessToken, async (req: any, res) => {
 
 		const currentUser = await getCurrentUser(req);
 		if (currentUser.type === UserType.ADMIN) {
-			res.send({
+			return res.send({
 				id: user.id,
 				email: user.email,
 				name: user.name,
@@ -92,7 +92,7 @@ userRoute.get("/:userId", verifyAccessToken, async (req: any, res) => {
 				courses: user.courses,
 			});
 		} else {
-			res.send({
+			return res.send({
 				id: user.id,
 				name: user.name,
 				username: user.username,
@@ -131,7 +131,7 @@ userRoute.put("/:userId", verifyAccessToken, async (req: any, res) => {
 			{ new: true }
 		);
 
-		res.send({
+		return res.send({
 			id: updatedUser.id,
 			email: updatedUser.email,
 			name: updatedUser.name,
@@ -161,7 +161,7 @@ userRoute.delete("/:userId", verifyAccessToken, async (req: any, res) => {
 		}
 
 		console.log(`Deleted user ${req.params.userId}`);
-		res.sendStatus(204);
+		return res.sendStatus(204);
 	} catch (err) {
 		return res.status(404).send("User not found");
 	}

@@ -24,9 +24,9 @@ courseRoute.post("/create/", verifyAccessToken, async (req, res) => {
 		currentUser.courses.push(course.id);
 		await currentUser.save();
 		await course.save();
-		res.send(course);
+		return res.send(course);
 	} catch (err) {
-		res.status(400).send(err);
+		return res.status(400).send(err);
 	}
 });
 
@@ -88,7 +88,11 @@ courseRoute.put("/:courseId/", verifyAccessToken, async (req: any, res) => {
 			},
 			{ new: true }
 		);
-		await redisClient.del("C-" + updatedCourse.id);
+		await redisClient.set(
+			"C-" + req.params.courseId,
+			JSON.stringify(course),
+			{ XX: true }
+		);
 		return res.send(updatedCourse);
 	} catch (err) {
 		console.log(err);
@@ -126,14 +130,14 @@ courseRoute.delete("/:courseId/", verifyAccessToken, async (req: any, res) => {
 						.then(() => console.log("Deleted " + fileURL))
 						.catch((err) => {
 							console.log(err.message);
-							res.status(500).send(err);
+							return res.status(500).send(err);
 						});
 				}
 			}
 			await redisClient.del("C-" + course.id);
 		} catch (err) {
 			console.log(err.message);
-			res.status(500).send(err);
+			return res.status(500).send(err);
 		}
 
 		console.log(`Deleted course ${req.params.courseId}`);
@@ -176,7 +180,11 @@ courseRoute.post(
 
 			await user.save();
 			await course.save();
-			await redisClient.del("C-" + course.id);
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
 			return res.send(course);
 		} catch (err) {
 			return res.status(400).send(err);
@@ -210,7 +218,7 @@ courseRoute.post(
 
 		try {
 			if (course.users.indexOf(req.params.userId) === -1)
-				res.status(400).send("User not enrolled");
+				return res.status(400).send("User not enrolled");
 
 			course.users = course.users.filter((e) => e !== req.params.userId);
 			user.courses = user.courses.filter(
@@ -219,10 +227,14 @@ courseRoute.post(
 
 			await user.save();
 			await course.save();
-			await redisClient.del("C-" + course.id);
-			res.send(course);
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
+			return res.send(course);
 		} catch (err) {
-			res.status(400).send(err);
+			return res.status(400).send(err);
 		}
 	}
 );

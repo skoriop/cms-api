@@ -66,16 +66,20 @@ postRoute.post(
 			}
 		} catch (err) {
 			console.log(err.message);
-			res.status(500).send("File upload error");
+			return res.status(500).send(err);
 		}
 
 		try {
 			course.posts.push(post);
 			await course.save();
-			await redisClient.del("C-" + course.id);
-			res.send(course);
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
+			return res.send(course);
 		} catch (err) {
-			res.status(400).send(err);
+			return res.status(400).send(err);
 		}
 	}
 );
@@ -145,7 +149,7 @@ postRoute.put(
 			}
 		} catch (err) {
 			console.log(err.message);
-			res.sendStatus(500);
+			return res.sendStatus(500);
 		}
 
 		try {
@@ -153,11 +157,15 @@ postRoute.put(
 				title: req.body.title || post.title,
 				body: req.body.body || post.body,
 			});
-			await redisClient.del("C-" + course.id);
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
 			await course.save();
-			res.send(post);
+			return res.send(post);
 		} catch (err) {
-			res.status(400).send(err);
+			return res.status(400).send(err);
 		}
 	}
 );
@@ -188,13 +196,17 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 				.then(() => console.log("Deleted " + fileURL))
 				.catch((err) => {
 					console.log(err.message);
-					res.status(500).send(err);
+					return res.status(500).send(err);
 				});
 		}
-		await redisClient.del("C-" + course.id);
+		await redisClient.set(
+			"C-" + req.params.courseId,
+			JSON.stringify(course),
+			{ XX: true }
+		);
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send(err);
+		return res.status(500).send(err);
 	}
 
 	try {
@@ -203,9 +215,9 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 		console.log(
 			`Deleted post ${req.params.postId} from course ${req.params.courseId}`
 		);
-		res.sendStatus(204);
+		return res.sendStatus(204);
 	} catch (err) {
-		res.status(400).send(err);
+		return res.status(400).send(err);
 	}
 });
 
