@@ -47,8 +47,8 @@ authRoute.post("/register", async (req, res) => {
 	try {
 		await user.save();
 
-		gmailTransport
-			.sendMail({
+		try {
+			await gmailTransport.sendMail({
 				from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
 				to: user.email,
 				subject: "Skoriop CMS - please confirm your account",
@@ -57,8 +57,10 @@ authRoute.post("/register", async (req, res) => {
 							<p>Thank you for signing up on Skoriop CMS. Please confirm your email by clicking the following link:</p>
 							<a href=http://${process.env.API_DOMAIN_NAME}:${process.env.API_PORT}/auth/confirm/${user.confirmationCode}>Confirm your email</a>
 						</div>`,
-			})
-			.catch((err) => console.log(err));
+			});
+		} catch (e) {
+			return res.status(500).send(e);
+		}
 
 		return res.send(user);
 	} catch (err) {
