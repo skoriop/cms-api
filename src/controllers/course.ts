@@ -3,6 +3,7 @@ import { deleteObject, ref } from "firebase/storage";
 import { getCurrentUser, UserType } from "../helpers/common";
 import { storage } from "../helpers/firebase_config";
 import { verifyAccessToken } from "../helpers/jwt";
+import { redisClient } from "../helpers/redis_config";
 import { Course } from "../models/Course";
 import { User } from "../models/User";
 import { postRoute } from "./post";
@@ -23,24 +24,41 @@ courseRoute.post("/create/", verifyAccessToken, async (req, res) => {
 		currentUser.courses.push(course.id);
 		await currentUser.save();
 		await course.save();
-		res.send({ course });
+		res.send(course);
 	} catch (err) {
 		res.status(400).send(err);
 	}
 });
 
 courseRoute.get("/:courseId/", verifyAccessToken, async (req: any, res) => {
+	const currentUser = await getCurrentUser(req);
+	if (currentUser.courses.indexOf(req.params.courseId) === -1)
+		return res.status(403).send("User not enrolled");
+
 	try {
-		const course = await Course.findById(req.params.courseId);
-		if (!course) return res.status(404).send("Course not found");
+		const cachedCourse = await redisClient.get("C-" + req.params.courseId);
+		if (cachedCourse) {
+			console.log("Cache hit!");
+			return res.send(JSON.parse(cachedCourse));
+		} else {
+			try {
+				const course = await Course.findById(req.params.courseId);
+				if (!course) return res.status(404).send("Course not found");
 
-		const currentUser = await getCurrentUser(req);
-		if (currentUser.courses.indexOf(req.params.courseId) === -1)
-			return res.status(403).send("User not enrolled");
+				console.log("Cache miss!");
+				await redisClient.set(
+					"C-" + req.params.courseId,
+					JSON.stringify(course)
+				);
 
-		res.send({ course });
+				return res.send(course);
+			} catch (e) {
+				return res.status(404).send("Course not found");
+			}
+		}
 	} catch (err) {
-		return res.status(404).send("Course not found");
+		console.log(err);
+		return res.status(500).send(err);
 	}
 });
 
@@ -49,8 +67,14 @@ courseRoute.put("/:courseId/", verifyAccessToken, async (req: any, res) => {
 	if (currentUser.type !== UserType.PROFESSOR) return res.sendStatus(403);
 
 	try {
-		const course = await Course.findById(req.params.courseId);
-		if (!course) return res.status(404).send("Course not found");
+		let course;
+
+		try {
+			course = await Course.findById(req.params.courseId);
+			if (!course) return res.status(404).send("Course not found");
+		} catch (e) {
+			return res.status(404).send("Course not found");
+		}
 
 		const currentUser = await getCurrentUser(req);
 		if (currentUser.courses.indexOf(req.params.courseId) === -1)
@@ -64,9 +88,11 @@ courseRoute.put("/:courseId/", verifyAccessToken, async (req: any, res) => {
 			},
 			{ new: true }
 		);
-		res.send({ updatedCourse });
+		await redisClient.del("C-" + updatedCourse.id);
+		return res.send(updatedCourse);
 	} catch (err) {
-		return res.status(404).send("Course not found");
+		console.log(err);
+		return res.status(500).send(err);
 	}
 });
 
@@ -104,6 +130,7 @@ courseRoute.delete("/:courseId/", verifyAccessToken, async (req: any, res) => {
 						});
 				}
 			}
+			await redisClient.del("C-" + course.id);
 		} catch (err) {
 			console.log(err.message);
 			res.status(500).send(err);
@@ -149,9 +176,10 @@ courseRoute.post(
 
 			await user.save();
 			await course.save();
-			res.send({ course });
+			await redisClient.del("C-" + course.id);
+			return res.send(course);
 		} catch (err) {
-			res.status(400).send(err);
+			return res.status(400).send(err);
 		}
 	}
 );
@@ -191,7 +219,8 @@ courseRoute.post(
 
 			await user.save();
 			await course.save();
-			res.send({ course });
+			await redisClient.del("C-" + course.id);
+			res.send(course);
 		} catch (err) {
 			res.status(400).send(err);
 		}

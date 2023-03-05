@@ -4,9 +4,9 @@ import "dotenv/config";
 mongoose.set("strictQuery", true);
 
 try {
-	mongoose.connect(process.env.MONGODB_DATABASE_URL || "", () =>
-		console.log("Connected to MongoDB!")
-	);
+	mongoose.connect(process.env.MONGODB_DATABASE_URL, () => {
+		console.log("Connected to MongoDB!");
+	});
 } catch (err) {
 	console.log(err);
 }
@@ -20,7 +20,7 @@ mongoose.connection.on("error", (err) => {
 });
 
 mongoose.connection.on("disconnected", () => {
-	console.log("Mongoose disconnected!");
+	console.log("\nMongoose disconnected!");
 });
 
 process.on("SIGINT", async () => {

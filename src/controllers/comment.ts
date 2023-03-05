@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getCurrentUser, UserType } from "../helpers/common";
 import { verifyAccessToken } from "../helpers/jwt";
+import { redisClient } from "../helpers/redis_config";
 import { Course } from "../models/Course";
 
 export const commentRoute = Router({ mergeParams: true });
@@ -29,8 +30,9 @@ commentRoute.post("/create/", verifyAccessToken, async (req: any, res) => {
 
 	try {
 		post.comments.push(comment);
+		await redisClient.del("C-" + course.id);
 		await course.save();
-		res.send({ post });
+		res.send(post);
 	} catch (err) {
 		res.status(400).send(err);
 	}
@@ -55,7 +57,7 @@ commentRoute.get("/:commentId/", verifyAccessToken, async (req: any, res) => {
 
 	const comment = post.comments.id(req.params.commentId);
 	if (!comment) return res.status(404).send("Comment not found");
-	return res.send({ comment });
+	return res.send(comment);
 });
 
 commentRoute.put("/:commentId/", verifyAccessToken, async (req: any, res) => {
@@ -81,8 +83,9 @@ commentRoute.put("/:commentId/", verifyAccessToken, async (req: any, res) => {
 
 	try {
 		comment.set(req.body);
+		await redisClient.del("C-" + course.id);
 		await course.save();
-		res.send({ comment });
+		res.send(comment);
 	} catch (err) {
 		return res.status(400).send(err);
 	}
@@ -119,6 +122,7 @@ commentRoute.delete(
 		try {
 			comment.remove();
 			await course.save();
+			await redisClient.del("C-" + course.id);
 			console.log(
 				`Deleted comment ${req.params.commentId} on post ${req.params.postId} from course ${req.params.courseId}`
 			);

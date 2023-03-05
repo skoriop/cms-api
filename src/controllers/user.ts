@@ -1,10 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { ObjectId } from "mongoose";
-
 import { getCurrentUser, UserType } from "../helpers/common";
 import { verifyAccessToken } from "../helpers/jwt";
-
 import { User } from "../models/User";
 import { Course } from "../models/Course";
 

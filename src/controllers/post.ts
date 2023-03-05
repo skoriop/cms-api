@@ -9,10 +9,12 @@ import multer from "multer";
 import { getCurrentUser, UserType } from "../helpers/common";
 import { storage } from "../helpers/firebase_config";
 import { verifyAccessToken } from "../helpers/jwt";
+import { redisClient } from "../helpers/redis_config";
 import { Course } from "../models/Course";
 import { commentRoute } from "./comment";
 
 export const postRoute = Router({ mergeParams: true });
+
 const fileUpload = multer({ storage: multer.memoryStorage() }).array("files");
 
 postRoute.post(
@@ -64,13 +66,14 @@ postRoute.post(
 			}
 		} catch (err) {
 			console.log(err.message);
-			res.sendStatus(500);
+			res.status(500).send("File upload error");
 		}
 
 		try {
 			course.posts.push(post);
 			await course.save();
-			res.send({ course });
+			await redisClient.del("C-" + course.id);
+			res.send(course);
 		} catch (err) {
 			res.status(400).send(err);
 		}
@@ -94,7 +97,7 @@ postRoute.get("/:postId/", verifyAccessToken, async (req: any, res) => {
 	const post = course.posts.id(req.params.postId);
 	if (!post) return res.status(404).send("Post not found");
 
-	return res.send({ post });
+	return res.send(post);
 });
 
 postRoute.put(
@@ -121,7 +124,7 @@ postRoute.put(
 
 		try {
 			for (const file of req.files) {
-				console.log("Uploading " + file.originalname);
+				// console.log("Uploading " + file.originalname);
 				const time = Date.now();
 				const storageRef = ref(
 					storage,
@@ -135,9 +138,9 @@ postRoute.put(
 					file.buffer,
 					metadata
 				);
-				console.log("Uploaded " + file.originalname);
+				// console.log("Uploaded " + file.originalname);
 				const fileURL = await getDownloadURL(uploadedFile.ref);
-				console.log(fileURL);
+				// console.log(fileURL);
 				post.files.push(fileURL);
 			}
 		} catch (err) {
@@ -150,8 +153,9 @@ postRoute.put(
 				title: req.body.title || post.title,
 				body: req.body.body || post.body,
 			});
+			await redisClient.del("C-" + course.id);
 			await course.save();
-			res.send({ post });
+			res.send(post);
 		} catch (err) {
 			res.status(400).send(err);
 		}
@@ -187,6 +191,7 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 					res.status(500).send(err);
 				});
 		}
+		await redisClient.del("C-" + course.id);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err);

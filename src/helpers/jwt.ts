@@ -30,10 +30,10 @@ export const verifyAccessToken = (req, res, next) => {
 			return next(createError.Unauthorized("Wrong JWT issuer"));
 		req.payload = payload;
 		getCurrentUser(req).then((user) => {
-			if (user.status === "Pending")
+			if (user.status !== "Active")
 				return next(createError.Unauthorized("Account not verified"));
+			else next();
 		});
-		next();
 	});
 };
 

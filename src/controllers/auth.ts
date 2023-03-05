@@ -1,9 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
-
-import { User } from "../models/User";
-
+import { gmailTransport } from "../helpers/gmail_config";
 import { UserType } from "../helpers/common";
 import {
 	createConfirmationCode,
@@ -12,7 +9,7 @@ import {
 	verifyAccessToken,
 	verifyRefreshToken,
 } from "../helpers/jwt";
-import { gmailTransport } from "../helpers/gmail_config";
+import { User } from "../models/User";
 
 export const authRoute = Router();
 
@@ -58,12 +55,12 @@ authRoute.post("/register", async (req, res) => {
 				html: `<div>
 							<h2>Hello ${user.name}!</h2>
 							<p>Thank you for signing up on Skoriop CMS. Please confirm your email by clicking the following link:</p>
-							<a href=http://${process.env.API_DOMAIN_NAME}:${process.env.PORT}/auth/confirm/${user.confirmationCode}>Confirm your email</a>
+							<a href=http://${process.env.API_DOMAIN_NAME}:${process.env.API_PORT}/auth/confirm/${user.confirmationCode}>Confirm your email</a>
 						</div>`,
 			})
 			.catch((err) => console.log(err));
 
-		res.send({ user });
+		res.send(user);
 	} catch (err) {
 		res.status(400).send(err);
 	}

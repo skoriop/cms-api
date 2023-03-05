@@ -1,9 +1,10 @@
-import express, { Application, ErrorRequestHandler } from "express";
+import express from "express";
 import "dotenv/config";
 
 import "./helpers/mongo_config";
 import "./helpers/firebase_config";
 import "./helpers/gmail_config";
+import "./helpers/redis_config";
 
 import { authRoute } from "./controllers/auth";
 import { userRoute } from "./controllers/user";
@@ -38,6 +39,6 @@ app.use((err, req, res, next) => {
 	});
 });
 
-app.listen(process.env.PORT, () => {
-	console.log(`Server is running on port ${process.env.PORT}`);
+app.listen(process.env.API_PORT, () => {
+	console.log(`Running on port ${process.env.API_PORT}!`);
 });
