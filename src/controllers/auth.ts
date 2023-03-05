@@ -1,15 +1,18 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 
 import { User } from "../models/User";
 
 import { UserType } from "../helpers/common";
 import {
+	createConfirmationCode,
 	signAccessToken,
 	signRefreshToken,
 	verifyAccessToken,
 	verifyRefreshToken,
 } from "../helpers/jwt";
+import { gmailTransport } from "../helpers/gmail_config";
 
 export const authRoute = Router();
 
@@ -33,16 +36,33 @@ authRoute.post("/register", async (req, res) => {
 		}
 	}
 
+	const confirmationCode = await createConfirmationCode(req.body.email);
+
 	const user = new User({
 		email: req.body.email,
 		name: req.body.name,
 		username: req.body.username,
 		password: hashedPassword,
+		confirmationCode: confirmationCode,
 		type: type,
 	});
 
 	try {
 		await user.save();
+
+		gmailTransport
+			.sendMail({
+				from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
+				to: user.email,
+				subject: "Skoriop CMS - please confirm your account",
+				html: `<div>
+							<h2>Hello ${user.name}!</h2>
+							<p>Thank you for signing up on Skoriop CMS. Please confirm your email by clicking the following link:</p>
+							<a href=http://${process.env.API_DOMAIN_NAME}:${process.env.PORT}/auth/confirm/${user.confirmationCode}>Confirm your email</a>
+						</div>`,
+			})
+			.catch((err) => console.log(err));
+
 		res.send({ user });
 	} catch (err) {
 		res.status(400).send(err);
@@ -81,4 +101,21 @@ authRoute.post("/logout", verifyAccessToken, async (req, res) => {
 	const userId = await verifyRefreshToken(refreshToken);
 	console.log(`Logged out user ${userId}`);
 	res.sendStatus(204);
+});
+
+authRoute.get("/confirm/:code", async (req, res) => {
+	const user = await User.findOne({ confirmationCode: req.params.code });
+	if (!user) return res.status(404).send("User not found");
+
+	if (user.status === "Active")
+		return res.status(400).send("User already verified");
+
+	try {
+		user.status = "Active";
+		await user.save();
+		console.log("Verified user " + user.id);
+		return res.sendStatus(200);
+	} catch (err) {
+		return res.status(500).send(err);
+	}
 });

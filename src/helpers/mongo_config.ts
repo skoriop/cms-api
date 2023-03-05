@@ -4,7 +4,7 @@ import "dotenv/config";
 mongoose.set("strictQuery", true);
 
 try {
-	mongoose.connect(process.env.MONGODB_CONNECT || "", () =>
+	mongoose.connect(process.env.MONGODB_DATABASE_URL || "", () =>
 		console.log("Connected to MongoDB!")
 	);
 } catch (err) {

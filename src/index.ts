@@ -3,13 +3,13 @@ import "dotenv/config";
 
 import "./helpers/mongo_config";
 import "./helpers/firebase_config";
+import "./helpers/gmail_config";
 
 import { authRoute } from "./controllers/auth";
 import { userRoute } from "./controllers/user";
 import { courseRoute } from "./controllers/course";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -25,20 +25,19 @@ app.get("/", async (req, res) => {
 });
 
 app.use(async (req, res, next) => {
-	res.status(404).send("This path does not exist.");
+	return res.status(404).send("This path does not exist.");
 });
 
-app.use(((err, req, res, next) => {
-	res.status(Math.floor(err.status) || Math.floor(Number(res.status)) || 500);
+app.use((err, req, res, next) => {
+	res.status(err.status || res.status || 500);
 	res.send({
 		error: {
-			status:
-				Math.floor(err.status) || Math.floor(Number(res.status)) || 500,
+			status: err.status || res.status || 500,
 			message: err.message,
 		},
 	});
-}) as ErrorRequestHandler);
+});
 
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
+app.listen(process.env.PORT, () => {
+	console.log(`Server is running on port ${process.env.PORT}`);
 });
