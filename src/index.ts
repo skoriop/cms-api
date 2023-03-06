@@ -5,6 +5,7 @@ import "./helpers/mongo_config";
 import "./helpers/firebase_config";
 import "./helpers/gmail_config";
 import "./helpers/redis_config";
+import "./helpers/rabbitmq_config";
 
 import { authRoute } from "./controllers/auth";
 import { userRoute } from "./controllers/user";

@@ -37,15 +37,14 @@ courseRoute.get("/:courseId/", verifyAccessToken, async (req: any, res) => {
 
 	try {
 		const cachedCourse = await redisClient.get("C-" + req.params.courseId);
+
 		if (cachedCourse) {
-			console.log("Cache hit!");
 			return res.send(JSON.parse(cachedCourse));
 		} else {
 			try {
 				const course = await Course.findById(req.params.courseId);
 				if (!course) return res.status(404).send("Course not found");
 
-				console.log("Cache miss!");
 				await redisClient.set(
 					"C-" + req.params.courseId,
 					JSON.stringify(course)
@@ -88,11 +87,13 @@ courseRoute.put("/:courseId/", verifyAccessToken, async (req: any, res) => {
 			},
 			{ new: true }
 		);
+
 		await redisClient.set(
 			"C-" + req.params.courseId,
 			JSON.stringify(course),
 			{ XX: true }
 		);
+
 		return res.send(updatedCourse);
 	} catch (err) {
 		console.log(err);
@@ -115,6 +116,7 @@ courseRoute.delete("/:courseId/", verifyAccessToken, async (req: any, res) => {
 		for (const userId of course.users) {
 			const user = await User.findById(userId);
 			if (!user) continue;
+
 			user.courses = user.courses.filter(
 				(e) => e !== req.params.courseId
 			);
@@ -124,7 +126,6 @@ courseRoute.delete("/:courseId/", verifyAccessToken, async (req: any, res) => {
 		try {
 			for (const post of course.posts) {
 				for (const fileURL of post.files) {
-					console.log("Deleting " + fileURL);
 					const fileRef = ref(storage, fileURL);
 					deleteObject(fileRef)
 						.then(() => console.log("Deleted " + fileURL))
@@ -180,11 +181,13 @@ courseRoute.post(
 
 			await user.save();
 			await course.save();
+
 			await redisClient.set(
 				"C-" + req.params.courseId,
 				JSON.stringify(course),
 				{ XX: true }
 			);
+
 			return res.send(course);
 		} catch (err) {
 			return res.status(400).send(err);
@@ -220,18 +223,18 @@ courseRoute.post(
 			if (course.users.indexOf(req.params.userId) === -1)
 				return res.status(400).send("User not enrolled");
 
-			course.users = course.users.filter((e) => e !== req.params.userId);
-			user.courses = user.courses.filter(
-				(e) => e !== req.params.courseId
-			);
+			course.users = course.users.filter((e) => e !== user.id);
+			user.courses = user.courses.filter((e) => e !== course.id);
 
 			await user.save();
 			await course.save();
+
 			await redisClient.set(
 				"C-" + req.params.courseId,
 				JSON.stringify(course),
 				{ XX: true }
 			);
+
 			return res.send(course);
 		} catch (err) {
 			return res.status(400).send(err);
