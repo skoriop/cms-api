@@ -9,31 +9,41 @@ import {
 } from "../helpers/gmail_config";
 import { verifyAccessToken } from "../helpers/jwt";
 import { redisClient } from "../helpers/redis_config";
+import {
+	courseSchema,
+	updateCourseSchema,
+	validate,
+} from "../helpers/validation";
 import { Course } from "../models/Course";
 import { User } from "../models/User";
 import { postRoute } from "./post";
 
 export const courseRoute = Router();
 
-courseRoute.post("/create/", verifyAccessToken, async (req, res) => {
-	const currentUser = await getCurrentUser(req);
-	if (currentUser.type !== UserType.PROFESSOR) return res.sendStatus(403);
+courseRoute.post(
+	"/create/",
+	verifyAccessToken,
+	validate(courseSchema),
+	async (req, res) => {
+		const currentUser = await getCurrentUser(req);
+		if (currentUser.type !== UserType.PROFESSOR) return res.sendStatus(403);
 
-	const course = new Course({
-		code: req.body.code,
-		name: req.body.name,
-		users: [currentUser.id],
-	});
+		const course = new Course({
+			code: req.body.code,
+			name: req.body.name,
+			users: [currentUser.id],
+		});
 
-	try {
-		currentUser.courses.push(course.id);
-		await currentUser.save();
-		await course.save();
-		return res.send(course);
-	} catch (err) {
-		return res.status(400).send(err);
+		try {
+			currentUser.courses.push(course.id);
+			await currentUser.save();
+			await course.save();
+			return res.send(course);
+		} catch (err) {
+			return res.status(400).send(err);
+		}
 	}
-});
+);
 
 courseRoute.get("/:courseId/", verifyAccessToken, async (req: any, res) => {
 	const currentUser = await getCurrentUser(req);
@@ -66,52 +76,57 @@ courseRoute.get("/:courseId/", verifyAccessToken, async (req: any, res) => {
 	}
 });
 
-courseRoute.put("/:courseId/", verifyAccessToken, async (req: any, res) => {
-	const currentUser = await getCurrentUser(req);
-	if (currentUser.type !== UserType.PROFESSOR) return res.sendStatus(403);
-
-	try {
-		let course;
-
-		try {
-			course = await Course.findById(req.params.courseId);
-			if (!course) return res.status(404).send("Course not found");
-		} catch (e) {
-			return res.status(404).send("Course not found");
-		}
-
+courseRoute.put(
+	"/:courseId/",
+	verifyAccessToken,
+	validate(updateCourseSchema),
+	async (req: any, res) => {
 		const currentUser = await getCurrentUser(req);
-		if (currentUser.courses.indexOf(req.params.courseId) === -1)
-			return res.status(403).send("User not enrolled");
-
-		const updatedCourse = await Course.findByIdAndUpdate(
-			req.params.courseId,
-			{
-				code: req.body.code || course.code,
-				name: req.body.name || course.name,
-			},
-			{ new: true }
-		);
-
-		await redisClient.set(
-			"C-" + req.params.courseId,
-			JSON.stringify(course),
-			{ XX: true }
-		);
+		if (currentUser.type !== UserType.PROFESSOR) return res.sendStatus(403);
 
 		try {
-			const err = await sendCourseUpdateEmail(updatedCourse);
-			if (err) throw err;
-		} catch (e) {
-			return res.status(500).send(e);
-		}
+			let course;
 
-		return res.send(updatedCourse);
-	} catch (err) {
-		console.log(err);
-		return res.status(500).send(err);
+			try {
+				course = await Course.findById(req.params.courseId);
+				if (!course) return res.status(404).send("Course not found");
+			} catch (e) {
+				return res.status(404).send("Course not found");
+			}
+
+			const currentUser = await getCurrentUser(req);
+			if (currentUser.courses.indexOf(req.params.courseId) === -1)
+				return res.status(403).send("User not enrolled");
+
+			const updatedCourse = await Course.findByIdAndUpdate(
+				req.params.courseId,
+				{
+					code: req.body.code || course.code,
+					name: req.body.name || course.name,
+				},
+				{ new: true }
+			);
+
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
+
+			try {
+				const err = await sendCourseUpdateEmail(updatedCourse);
+				if (err) throw err;
+			} catch (e) {
+				return res.status(500).send(e);
+			}
+
+			return res.send(updatedCourse);
+		} catch (err) {
+			console.log(err);
+			return res.status(500).send(err);
+		}
 	}
-});
+);
 
 courseRoute.delete("/:courseId/", verifyAccessToken, async (req: any, res) => {
 	const currentUser = await getCurrentUser(req);

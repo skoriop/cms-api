@@ -39,6 +39,7 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		enum: UserType,
 		required: true,
+		immutable: true,
 	},
 	courses: {
 		type: Array<mongoose.Types.ObjectId>,

@@ -12,6 +12,7 @@ import { sendCourseUpdateEmail } from "../helpers/gmail_config";
 import { verifyAccessToken } from "../helpers/jwt";
 import { producer } from "../helpers/rabbitmq_config";
 import { redisClient } from "../helpers/redis_config";
+import { postSchema, updatePostSchema, validate } from "../helpers/validation";
 import { Course } from "../models/Course";
 import { commentRoute } from "./comment";
 
@@ -23,6 +24,7 @@ postRoute.post(
 	"/create/",
 	verifyAccessToken,
 	fileUpload,
+	validate(postSchema),
 	async (req: any, res) => {
 		const currentUser = await getCurrentUser(req);
 		if (currentUser.type !== UserType.PROFESSOR) return res.sendStatus(403);
@@ -140,6 +142,7 @@ postRoute.put(
 	"/:postId/",
 	verifyAccessToken,
 	fileUpload,
+	validate(updatePostSchema),
 	async (req: any, res) => {
 		let course;
 		try {

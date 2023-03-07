@@ -10,10 +10,11 @@ import {
 	verifyRefreshToken,
 } from "../helpers/jwt";
 import { User } from "../models/User";
+import { loginSchema, userSchema, validate } from "../helpers/validation";
 
 export const authRoute = Router();
 
-authRoute.post("/register", async (req, res) => {
+authRoute.post("/register", validate(userSchema), async (req, res) => {
 	const emailExists = await User.findOne({ email: req.body.email });
 	if (emailExists) return res.status(400).send("Email already exists");
 
@@ -60,7 +61,7 @@ authRoute.post("/register", async (req, res) => {
 	}
 });
 
-authRoute.post("/login", async (req, res) => {
+authRoute.post("/login", validate(loginSchema), async (req, res) => {
 	const by_email = await User.findOne({ email: req.body.email });
 	const by_username = await User.findOne({ username: req.body.username });
 	if (!by_email && !by_username)
