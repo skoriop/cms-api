@@ -8,6 +8,7 @@ import {
 import multer from "multer";
 import { getCurrentUser, UserType } from "../helpers/common";
 import { storage } from "../helpers/firebase_config";
+import { sendCourseUpdateEmail } from "../helpers/gmail_config";
 import { verifyAccessToken } from "../helpers/jwt";
 import { producer } from "../helpers/rabbitmq_config";
 import { redisClient } from "../helpers/redis_config";
@@ -100,6 +101,13 @@ postRoute.post(
 					{ XX: true }
 				);
 
+				try {
+					const err = await sendCourseUpdateEmail(course);
+					if (err) throw err;
+				} catch (e) {
+					return res.status(500).send(e);
+				}
+
 				return res.send(post);
 			} catch (err) {
 				return res.status(400).send(err);
@@ -151,24 +159,26 @@ postRoute.put(
 			return res.status(403).send("User not enrolled");
 
 		try {
-			for (const file of req.files) {
-				const time = Date.now();
-				const storageRef = ref(
-					storage,
-					`files/${course.id}/${file.originalname + "-" + time}`
-				);
-				const metadata = {
-					contentType: file.mimetype,
-				};
+			if (req.files) {
+				for (const file of req.files) {
+					const time = Date.now();
+					const storageRef = ref(
+						storage,
+						`files/${course.id}/${file.originalname + "-" + time}`
+					);
+					const metadata = {
+						contentType: file.mimetype,
+					};
 
-				const uploadedFile = await uploadBytesResumable(
-					storageRef,
-					file.buffer,
-					metadata
-				);
+					const uploadedFile = await uploadBytesResumable(
+						storageRef,
+						file.buffer,
+						metadata
+					);
 
-				const fileURL = await getDownloadURL(uploadedFile.ref);
-				post.files.push(fileURL);
+					const fileURL = await getDownloadURL(uploadedFile.ref);
+					post.files.push(fileURL);
+				}
 			}
 		} catch (err) {
 			console.log(err.message);
@@ -186,6 +196,13 @@ postRoute.put(
 				JSON.stringify(course),
 				{ XX: true }
 			);
+
+			try {
+				const err = await sendCourseUpdateEmail(course);
+				if (err) throw err;
+			} catch (e) {
+				return res.status(500).send(e);
+			}
 
 			await course.save();
 			return res.send(post);
@@ -223,12 +240,6 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 					return res.status(500).send(err);
 				});
 		}
-
-		await redisClient.set(
-			"C-" + req.params.courseId,
-			JSON.stringify(course),
-			{ XX: true }
-		);
 	} catch (err) {
 		console.log(err.message);
 		return res.status(500).send(err);
@@ -240,6 +251,20 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 		console.log(
 			`Deleted post ${req.params.postId} from course ${req.params.courseId}`
 		);
+
+		try {
+			await redisClient.set(
+				"C-" + req.params.courseId,
+				JSON.stringify(course),
+				{ XX: true }
+			);
+
+			const err = await sendCourseUpdateEmail(course);
+			if (err) throw err;
+		} catch (e) {
+			return res.status(500).send(e);
+		}
+
 		return res.sendStatus(204);
 	} catch (err) {
 		return res.status(400).send(err);

@@ -2,6 +2,11 @@ import { Router } from "express";
 import { deleteObject, ref } from "firebase/storage";
 import { getCurrentUser, UserType } from "../helpers/common";
 import { storage } from "../helpers/firebase_config";
+import {
+	sendCourseUpdateEmail,
+	sendEnrolledEmail,
+	sendUnenrolledEmail,
+} from "../helpers/gmail_config";
 import { verifyAccessToken } from "../helpers/jwt";
 import { redisClient } from "../helpers/redis_config";
 import { Course } from "../models/Course";
@@ -93,6 +98,13 @@ courseRoute.put("/:courseId/", verifyAccessToken, async (req: any, res) => {
 			JSON.stringify(course),
 			{ XX: true }
 		);
+
+		try {
+			const err = await sendCourseUpdateEmail(updatedCourse);
+			if (err) throw err;
+		} catch (e) {
+			return res.status(500).send(e);
+		}
 
 		return res.send(updatedCourse);
 	} catch (err) {
@@ -188,6 +200,13 @@ courseRoute.post(
 				{ XX: true }
 			);
 
+			try {
+				const err = await sendEnrolledEmail(user, course);
+				if (err) throw err;
+			} catch (e) {
+				return res.status(500).send(e);
+			}
+
 			return res.send(course);
 		} catch (err) {
 			return res.status(400).send(err);
@@ -234,6 +253,13 @@ courseRoute.post(
 				JSON.stringify(course),
 				{ XX: true }
 			);
+
+			try {
+				const err = await sendUnenrolledEmail(user, course);
+				if (err) throw err;
+			} catch (e) {
+				return res.status(500).send(e);
+			}
 
 			return res.send(course);
 		} catch (err) {

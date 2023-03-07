@@ -1,6 +1,7 @@
 import amqplib, { Channel } from "amqplib";
 import "dotenv/config";
 import { Course } from "../models/Course";
+import { sendCourseUpdateEmail } from "./gmail_config";
 import { redisClient } from "./redis_config";
 
 export let producer: Channel;
@@ -63,6 +64,9 @@ export let producer: Channel;
 						JSON.stringify(course),
 						{ XX: true }
 					);
+
+					const err = await sendCourseUpdateEmail(course);
+					if (err) throw err;
 				} catch (err) {
 					console.log(err);
 				}

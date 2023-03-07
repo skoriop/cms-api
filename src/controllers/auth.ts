@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { gmailTransport } from "../helpers/gmail_config";
+import { sendVerificationEmail } from "../helpers/gmail_config";
 import { UserType } from "../helpers/common";
 import {
 	createConfirmationCode,
@@ -48,16 +48,8 @@ authRoute.post("/register", async (req, res) => {
 		await user.save();
 
 		try {
-			await gmailTransport.sendMail({
-				from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
-				to: user.email,
-				subject: "Skoriop CMS - please confirm your account",
-				html: `<div>
-							<h2>Hello ${user.name}!</h2>
-							<p>Thank you for signing up on Skoriop CMS. Please confirm your email by clicking the following link:</p>
-							<a href=http://${process.env.API_DOMAIN_NAME}:${process.env.API_PORT}/auth/confirm/${user.confirmationCode}>Confirm your email</a>
-						</div>`,
-			});
+			const err = await sendVerificationEmail(user);
+			if (err) throw err;
 		} catch (e) {
 			return res.status(500).send(e);
 		}
