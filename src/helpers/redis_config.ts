@@ -1,7 +1,9 @@
 import { createClient } from "redis";
 import "dotenv/config";
 
-export const redisClient = createClient({ url: process.env.REDIS_URL });
+export const redisClient = createClient({
+	url: process.env.REDIS_INSTANCE_URL,
+});
 
 (async () => {
 	await redisClient.connect();

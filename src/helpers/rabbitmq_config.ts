@@ -8,7 +8,7 @@ export let producer: Channel;
 
 (async () => {
 	try {
-		const conn = await amqplib.connect(process.env.RABBITMQ_URL);
+		const conn = await amqplib.connect(process.env.RABBITMQ_INSTANCE_URL);
 		console.log("Connected to RabbitMQ!");
 
 		process.once("SIGINT", conn.close.bind(conn));

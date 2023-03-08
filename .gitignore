@@ -1,6 +1,5 @@
 node_modules/
 dist/
-doc/
 *.code-workspace
 *.env
 *.rdb

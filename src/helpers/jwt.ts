@@ -8,7 +8,7 @@ export const signAccessToken = (userId) => {
 		const secret = process.env.ACCESS_SECRET_TOKEN;
 		const options = {
 			expiresIn: "1h",
-			issuer: "skoriop-cms.com",
+			issuer: process.env.API_DOMAIN_NAME,
 			audience: userId,
 		};
 		jwt.sign(payload, secret, options, (err, token) => {
@@ -26,7 +26,7 @@ export const verifyAccessToken = (req, res, next) => {
 	const token = req.headers["authorization"].split(" ")[1];
 	jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, payload) => {
 		if (err) return res.status(401).send(err);
-		if (payload.iss !== "skoriop-cms.com")
+		if (payload.iss !== process.env.API_DOMAIN_NAME)
 			return res.status(401).send("Wrong JWT issuer");
 		req.payload = payload;
 		getCurrentUser(req).then((user) => {
@@ -43,7 +43,7 @@ export const signRefreshToken = (userId) => {
 		const secret = process.env.REFRESH_SECRET_TOKEN;
 		const options = {
 			expiresIn: "7d",
-			issuer: "skoriop-cms.com",
+			issuer: process.env.API_DOMAIN_NAME,
 			audience: userId,
 		};
 		jwt.sign(payload, secret, options, (err, token) => {

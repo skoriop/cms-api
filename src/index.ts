@@ -31,12 +31,14 @@ app.use(async (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-	return res.status(err.status || res.status || 500).send({
-		error: {
-			status: err.status || res.status || 500,
-			message: err.message,
-		},
-	});
+	return res
+		.status(Math.floor(err.status) || Math.floor(res.status) || 500)
+		.send({
+			error: {
+				status: Math.floor(err.status) || Math.floor(res.status) || 500,
+				message: err.message,
+			},
+		});
 });
 
 app.listen(process.env.API_PORT, () => {

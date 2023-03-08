@@ -97,16 +97,15 @@ authRoute.post("/logout", verifyAccessToken, async (req, res) => {
 
 authRoute.get("/confirm/:code", async (req, res) => {
 	const user = await User.findOne({ confirmationCode: req.params.code });
-	if (!user) return res.status(404).send("User not found");
-
-	if (user.status === "Active")
-		return res.status(400).send("User already verified");
+	if (!user) return res.status(400).send("Invalid code");
 
 	try {
-		user.status = "Active";
-		await user.save();
+		if (user.status !== "Active") {
+			user.status = "Active";
+			await user.save();
+		}
 		console.log("Verified user " + user.id);
-		return res.sendStatus(200);
+		return res.send(user);
 	} catch (err) {
 		return res.status(500).send(err);
 	}

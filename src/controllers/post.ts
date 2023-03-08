@@ -163,6 +163,17 @@ postRoute.put(
 
 		try {
 			if (req.files) {
+				if (post.files) {
+					for (const fileURL of post.files) {
+						const fileRef = ref(storage, fileURL);
+						deleteObject(fileRef)
+							.then(() => console.log("Deleted " + fileURL))
+							.catch((err) => {
+								console.log(err.message);
+								return res.status(500).send(err);
+							});
+					}
+				}
 				for (const file of req.files) {
 					const time = Date.now();
 					const storageRef = ref(

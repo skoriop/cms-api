@@ -88,25 +88,16 @@ userRoute.get("/:userId", verifyAccessToken, async (req: any, res) => {
 		if (!user) return res.status(404).send("User not found");
 
 		const currentUser = await getCurrentUser(req);
-		if (currentUser.type === UserType.ADMIN) {
-			return res.send({
-				id: user.id,
-				email: user.email,
-				name: user.name,
-				username: user.username,
-				createdAt: user.createdAt,
-				type: user.type,
-				courses: user.courses,
-			});
-		} else {
-			return res.send({
-				id: user.id,
-				name: user.name,
-				username: user.username,
-				type: user.type,
-				courses: user.courses,
-			});
-		}
+		return res.send({
+			id: user.id,
+			email: user.email,
+			name: user.name,
+			username: user.username,
+			createdAt: user.createdAt,
+			status: user.status,
+			type: user.type,
+			courses: user.courses,
+		});
 	} catch (err) {
 		return res.status(404).send("User not found");
 	}
@@ -118,7 +109,11 @@ userRoute.put(
 	validate(updateUserSchema),
 	async (req: any, res) => {
 		const currentUser = await getCurrentUser(req);
-		if (currentUser.type !== UserType.ADMIN) return res.sendStatus(403);
+		if (
+			currentUser.id !== req.params.userId &&
+			currentUser.type !== UserType.ADMIN
+		)
+			return res.sendStatus(403);
 
 		try {
 			const user = await User.findById(req.params.userId);
@@ -150,6 +145,7 @@ userRoute.put(
 				name: updatedUser.name,
 				username: updatedUser.username,
 				createdAt: updatedUser.createdAt,
+				status: user.status,
 				type: updatedUser.type,
 				courses: updatedUser.courses,
 			});
@@ -161,7 +157,11 @@ userRoute.put(
 
 userRoute.delete("/:userId", verifyAccessToken, async (req: any, res) => {
 	const currentUser = await getCurrentUser(req);
-	if (currentUser.type !== UserType.ADMIN) return res.sendStatus(403);
+	if (
+		currentUser.id !== req.params.userId &&
+		currentUser.type !== UserType.ADMIN
+	)
+		return res.sendStatus(403);
 
 	try {
 		const user = await User.findByIdAndDelete(req.params.userId);
