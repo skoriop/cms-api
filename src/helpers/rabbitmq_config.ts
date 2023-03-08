@@ -1,7 +1,7 @@
 import amqplib, { Channel } from "amqplib";
 import "dotenv/config";
 import { Course } from "../models/Course";
-import { sendCourseUpdateEmail } from "./gmail_config";
+import { gmailTransport, sendCourseUpdateEmail } from "./gmail_config";
 import { redisClient } from "./redis_config";
 
 export let producer: Channel;
@@ -35,6 +35,7 @@ export let producer: Channel;
 			""
 		);
 		await producer.bindQueue("FINAL_QUEUE", "FINAL_EXCHANGE", "");
+		await producer.assertQueue("EMAIL_QUEUE");
 
 		const consumer = await conn.createChannel();
 
@@ -67,6 +68,24 @@ export let producer: Channel;
 
 					const err = await sendCourseUpdateEmail(course);
 					if (err) throw err;
+				} catch (err) {
+					console.log(err);
+				}
+			},
+			{ noAck: true }
+		);
+
+		consumer.consume(
+			"EMAIL_QUEUE",
+			async (raw) => {
+				if (!raw) return;
+				const msg = JSON.parse(raw.content.toString());
+				console.log(msg);
+				try {
+					await gmailTransport.sendMail({
+						from: `${process.env.GOOGLE_EMAIL_DISPLAY_NAME} <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
+						...msg,
+					});
 				} catch (err) {
 					console.log(err);
 				}

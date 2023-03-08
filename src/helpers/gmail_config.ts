@@ -1,8 +1,9 @@
 import nodemailer from "nodemailer";
 import "dotenv/config";
 import { User } from "../models/User";
+import { producer } from "./rabbitmq_config";
 
-const gmailTransport = nodemailer.createTransport({
+export const gmailTransport = nodemailer.createTransport({
 	service: "gmail",
 	auth: {
 		type: "OAuth2",
@@ -16,12 +17,15 @@ const gmailTransport = nodemailer.createTransport({
 
 console.log("Connected to Gmail!");
 
+export const sendEmailNotification = (msg) => {
+	producer.sendToQueue("EMAIL_QUEUE", Buffer.from(JSON.stringify(msg)));
+};
+
 export const sendVerificationEmail = async (user) => {
 	try {
-		await gmailTransport.sendMail({
-			from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
+		sendEmailNotification({
 			to: user.email,
-			subject: "Skoriop CMS - please confirm your account",
+			subject: `${process.env.GOOGLE_EMAIL_DISPLAY_NAME} - please confirm your account`,
 			html: `<div>
 				<p>Hello ${user.name}!</p>
 				<p>Thank you for signing up on Skoriop CMS. Please confirm your email by clicking the following link:</p>
@@ -37,10 +41,9 @@ export const sendVerificationEmail = async (user) => {
 
 export const sendEnrolledEmail = async (user, course) => {
 	try {
-		await gmailTransport.sendMail({
-			from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
+		sendEmailNotification({
 			to: user.email,
-			subject: `Skoriop CMS - Enrolled in course ${course.name}`,
+			subject: `${process.env.GOOGLE_EMAIL_DISPLAY_NAME} - Enrolled in course ${course.name}`,
 			html: `<div>
 				<p>Hello ${user.name}!</p>
 				<p>You have been enrolled in the course <b>${course.name}</b>.</p>
@@ -55,10 +58,9 @@ export const sendEnrolledEmail = async (user, course) => {
 
 export const sendUnenrolledEmail = async (user, course) => {
 	try {
-		await gmailTransport.sendMail({
-			from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
+		sendEmailNotification({
 			to: user.email,
-			subject: `Skoriop CMS - Unenrolled from course ${course.name}`,
+			subject: `${process.env.GOOGLE_EMAIL_DISPLAY_NAME} - Unenrolled from course ${course.name}`,
 			html: `<div>
 				<p>Hello ${user.name}!</p>
 				<p>You have been unenrolled from the course <b>${course.name}</b>.</p>
@@ -80,10 +82,9 @@ export const sendCourseUpdateEmail = async (course) => {
 			emailIds.push(user.email);
 		}
 
-		await gmailTransport.sendMail({
-			from: `Skoriop CMS <${process.env.GOOGLE_EMAIL_ADDRESS}>`,
+		sendEmailNotification({
 			to: emailIds,
-			subject: `Skoriop CMS - ${course.name} was updated`,
+			subject: `${process.env.GOOGLE_EMAIL_DISPLAY_NAME} - ${course.name} was updated`,
 			html: `<div>
 				<p>Course <b>${course.name}</b> has been recently updated.</p>
 			</div>`,
