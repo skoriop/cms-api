@@ -36,8 +36,8 @@ userRoute.put(
 
 		let hashedPassword = undefined;
 		if (req.body.password !== undefined) {
-			const salt = await bcrypt.genSalt(10);
-			hashedPassword = await bcrypt.hash(req.body.password, salt);
+			const salt = bcrypt.genSaltSync(10);
+			hashedPassword = bcrypt.hashSync(req.body.password, salt);
 		}
 
 		try {

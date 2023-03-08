@@ -22,16 +22,16 @@ export const signAccessToken = (userId) => {
 };
 
 export const verifyAccessToken = (req, res, next) => {
-	if (!req.headers["authorization"]) return next(createError.Unauthorized());
+	if (!req.headers["authorization"]) return res.sendStatus(401);
 	const token = req.headers["authorization"].split(" ")[1];
 	jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, payload) => {
-		if (err) return next(createError.Unauthorized(err));
+		if (err) return res.status(401).send(err);
 		if (payload.iss !== "skoriop-cms.com")
-			return next(createError.Unauthorized("Wrong JWT issuer"));
+			return res.status(401).send("Wrong JWT issuer");
 		req.payload = payload;
 		getCurrentUser(req).then((user) => {
 			if (user.status !== "Active")
-				return next(createError.Unauthorized("Account not verified"));
+				return res.status(401).send("Account not verified");
 			else next();
 		});
 	});
@@ -42,7 +42,7 @@ export const signRefreshToken = (userId) => {
 		const payload = {};
 		const secret = process.env.REFRESH_SECRET_TOKEN;
 		const options = {
-			expiresIn: "14d",
+			expiresIn: "7d",
 			issuer: "skoriop-cms.com",
 			audience: userId,
 		};

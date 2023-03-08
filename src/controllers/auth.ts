@@ -21,8 +21,8 @@ authRoute.post("/register", validate(userSchema), async (req, res) => {
 	const usernameExists = await User.findOne({ username: req.body.username });
 	if (usernameExists) return res.status(400).send("Username already exists");
 
-	const salt = await bcrypt.genSalt(10);
-	const hashedPassword = await bcrypt.hash(req.body.password, salt);
+	const salt = bcrypt.genSaltSync(10);
+	const hashedPassword = bcrypt.hashSync(req.body.password, salt);
 	let type = UserType.STUDENT;
 
 	if (req.headers["authorization"]) {
