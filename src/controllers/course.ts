@@ -54,6 +54,7 @@ courseRoute.get("/:courseId/", verifyAccessToken, async (req: any, res) => {
 		const cachedCourse = await redisClient.get("C-" + req.params.courseId);
 
 		if (cachedCourse) {
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			return res.send(JSON.parse(cachedCourse));
 		} else {
 			try {
@@ -64,7 +65,7 @@ courseRoute.get("/:courseId/", verifyAccessToken, async (req: any, res) => {
 					"C-" + req.params.courseId,
 					JSON.stringify(course)
 				);
-
+				await redisClient.expire("C-" + req.params.courseId, 600);
 				return res.send(course);
 			} catch (e) {
 				return res.status(404).send("Course not found");
@@ -112,7 +113,7 @@ courseRoute.put(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			try {
 				const err = await sendCourseUpdateEmail(updatedCourse);
 				if (err) throw err;
@@ -214,7 +215,7 @@ courseRoute.post(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			try {
 				const err = await sendEnrolledEmail(user, course);
 				if (err) throw err;
@@ -268,7 +269,7 @@ courseRoute.post(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			try {
 				const err = await sendUnenrolledEmail(user, course);
 				if (err) throw err;

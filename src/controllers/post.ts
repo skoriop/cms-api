@@ -102,7 +102,7 @@ postRoute.post(
 					JSON.stringify(course),
 					{ XX: true }
 				);
-
+				await redisClient.expire("C-" + req.params.courseId, 600);
 				try {
 					const err = await sendCourseUpdateEmail(course);
 					if (err) throw err;
@@ -210,7 +210,7 @@ postRoute.put(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			try {
 				const err = await sendCourseUpdateEmail(course);
 				if (err) throw err;
@@ -272,7 +272,7 @@ postRoute.delete("/:postId/", verifyAccessToken, async (req: any, res) => {
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			const err = await sendCourseUpdateEmail(course);
 			if (err) throw err;
 		} catch (e) {

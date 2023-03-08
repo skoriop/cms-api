@@ -65,7 +65,7 @@ export let producer: Channel;
 						JSON.stringify(course),
 						{ XX: true }
 					);
-
+					await redisClient.expire("C-" + course.id, 600);
 					const err = await sendCourseUpdateEmail(course);
 					if (err) throw err;
 				} catch (err) {

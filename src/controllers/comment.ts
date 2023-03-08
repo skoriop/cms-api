@@ -45,7 +45,7 @@ commentRoute.post(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			await course.save();
 			return res.send(comment);
 		} catch (err) {
@@ -110,7 +110,7 @@ commentRoute.put(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			await course.save();
 			return res.send(comment);
 		} catch (err) {
@@ -156,7 +156,7 @@ commentRoute.delete(
 				JSON.stringify(course),
 				{ XX: true }
 			);
-
+			await redisClient.expire("C-" + req.params.courseId, 600);
 			console.log(
 				`Deleted comment ${req.params.commentId} on post ${req.params.postId} from course ${req.params.courseId}`
 			);
